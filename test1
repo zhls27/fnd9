@@ -1,0 +1,185 @@
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8"></meta>
+
+  <link href="https://unpkg.com/plyr@3.6.8/dist/plyr.css" rel="stylesheet"></link>
+
+<style>
+body {
+  font-family: sans-serif;
+}
+
+.plyr {
+
+  --plyr-color-main: #ee0000;
+
+}
+
+</style>
+
+<script>
+
+  window.console = window.console || function(t) {};
+
+</script>
+
+<script>
+
+  if (document.location.search.match(/type=embed/gi)) {
+
+    window.parent.postMessage("resize", "*");
+
+  }
+
+</script>
+
+</head>
+
+<body translate="no">
+
+  <video controls="" crossorigin="" data-poster="" id="player" preload="none" width="500">
+
+  <source src="https://d1211whpimeups.cloudfront.net/smil:rtb2/playlist.m3u8" type="application/x-mpegURL"></source>
+
+</video>
+
+<script src="https://unpkg.com/plyr@3.6.8/dist/plyr.polyfilled.min.js"></script>
+
+<script src="https://unpkg.com/hls.js@1.0.4/dist/hls.min.js"></script>
+
+<script id="rendered-js">
+
+function updateQuality(newQuality) {
+
+  window.hls.levels.forEach((level, levelIndex) => {
+
+    if (level.height === newQuality) {
+
+      console.log('Found quality match with ' + newQuality);
+
+      window.hls.currentLevel = levelIndex;
+
+    };
+
+  });
+
+};
+
+var video = document.querySelector('video');
+
+var source = video.getElementsByTagName('source')[0].src;
+
+var player = null;
+
+// For more options see: https://github.com/sampotts/plyr/#options
+
+// captions.update is required for captions to work with hls.js
+
+var defaultOptions = {
+
+  duration: 6340,
+
+  previewThumbnails: {
+    enabled: true,
+    src: 'https://cdn2.tabletoptactics.tv/48cbf7f75863abb4b9d3921827d98581.vtt'
+  },
+  captions: {
+  active: false },
+  resetOnEnd: true,
+  i18n: {
+    qualityLabel: {
+
+      0: 'Auto' } } };
+
+if (Hls.isSupported()) {
+
+  // For more Hls.js options, see https://github.com/dailymotion/hls.js
+
+  var hls = new Hls();
+
+  hls.loadSource(source);
+
+  // From the m3u8 playlist, hls parses the manifest and returns
+
+  // all available video qualities. This is important, in this approach,
+
+  // we will have one source on the Plyr player.
+
+  hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+
+    // Transform available levels into an array of integers (height values).
+
+    var availableQualities = hls.levels.map(l => l.height);
+
+    availableQualities.unshift(0); //prepend 0 to quality array
+
+    // Add new qualities to option
+
+    defaultOptions.quality = {
+
+      default: 0,
+
+      options: availableQualities,
+
+      // this ensures Plyr to use Hls to update quality level
+
+      forced: true,
+
+      onChange: e => updateQuality(e) };
+
+    // Initialize here
+
+    var player = new Plyr(video, defaultOptions);
+
+  });
+
+  hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
+
+    // hls.attachMedia(video);
+
+    var span = document.querySelector('.plyr__menu__container [data-plyr=quality][value=0] span');
+
+    if (hls.autoLevelEnabled) {
+
+      span.innerHTML = `Auto (${hls.levels[data.level].height}p)`;
+
+    } else {
+
+      span.innerHTML = `Auto`;
+
+    };
+
+  });
+
+  hls.attachMedia(video);
+
+  window.hls = hls;
+
+} else {
+
+  // default options with no quality update in case Hls is not supported
+
+  var player = new Plyr(video, defaultOptions);
+
+};
+
+// video.onplay = function() {
+
+//   if (hls) {
+
+//     hls.attachMedia(video);
+
+//     this.play();
+
+//   }
+
+// }
+
+//# sourceURL=pen.js
+
+    </script>
+
+</body>
+
+</html>
